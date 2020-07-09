@@ -1,0 +1,23 @@
+{
+  "name": "react-nodejs-basic",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rarlala/react-nodejs-basic.git"
+  },
+  "author": "Jung Suji",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rarlala/react-nodejs-basic/issues"
+  },
+  "homepage": "https://github.com/rarlala/react-nodejs-basic#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}

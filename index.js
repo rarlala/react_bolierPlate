@@ -1,10 +1,19 @@
 const express = require('express');
 const app = express();
 const port = 5000;
+const bodyParser = require('body-parser');
+const config = require('./config/key');
+
+const User = require('./models/User');
+
+// application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: true }));
+// application/json
+app.use(bodyParser.json());
 
 const mongoose = require('mongoose');
 mongoose
-  .connect('mongodb+srv://dbUser:dbUser1234@react-basic.q69yi.mongodb.net/dbUser?retryWrites=true&w=majority', {
+  .connect(config.mongoURI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true,
@@ -13,6 +22,15 @@ mongoose
   .then(() => console.log('MongoDB Connected...'))
   .catch((err) => console.log(err));
 
-app.get('/', (req, res) => res.send('hi'));
+app.get('/', (req, res) => res.send('안녕'));
+app.post('/registers', (req, res) => {
+  // 회원 가입 시 필요한 정보들을 client에서 가져오려면 정보를 DB에 넣어준다
+  const user = new User(req.body);
+
+  user.save((err, userInfo) => {
+    if (err) return res.json({ success: false, err });
+    return res.status(200).json({ success: true });
+  });
+});
 
 app.listen(port, () => console.log(`Example app listening on port ${port}`));

@@ -15,7 +15,7 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 
 const mongoose = require('mongoose');
-const auth = require('./middleware/auth');
+
 mongoose
   .connect(config.mongoURI, {
     useNewUrlParser: true,
@@ -27,6 +27,11 @@ mongoose
   .catch((err) => console.log(err));
 
 app.get('/', (req, res) => res.send('안녕'));
+
+app.get('/api/hello', (req, res) => {
+  res.send('안녕하세요~');
+});
+
 app.post('/api/users/registers', (req, res) => {
   // 회원 가입 시 필요한 정보들을 client에서 가져오려면 정보를 DB에 넣어준다
   const user = new User(req.body);

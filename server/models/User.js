@@ -15,7 +15,7 @@ const userSchema = mongoose.Schema({
   },
   password: {
     type: String,
-    maxlength: 5,
+    minlength: 5,
   },
   lastname: {
     type: String,
@@ -57,14 +57,15 @@ userSchema.pre('save', function (next) {
 userSchema.methods.comparePassword = function (plainPassword, cb) {
   // plainPassword와 암호화된 비밀번호와 같은지 체크하기 위해 plainPassword
   bcrypt.compare(plainPassword, this.password, function (err, isMatch) {
-    if (err) return cb(err), cb(null, isMatch);
+    if (err) return cb(err);
+    cb(null, isMatch);
   });
 };
 
 userSchema.methods.generateToken = function (cb) {
   var user = this;
   // jsonwebtoken을 이용해서 token을 생성하기
-  var token = jwt.sign(user._id.toHexString, 'secretToken');
+  var token = jwt.sign(user._id.toHexString(), 'secretToken');
   user.token = token;
   user.save(function (err, user) {
     if (err) return cb(err);

@@ -25,10 +25,7 @@ function LoginPage(props) {
     };
 
     dispatch(loginUser(body)).then((response) => {
-      console.log('진입');
-
       if (response.payload.loginSuccess) {
-        console.log('성공');
         props.history.push('/');
       } else {
         alert('Error');

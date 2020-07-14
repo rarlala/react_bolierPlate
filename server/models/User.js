@@ -73,7 +73,7 @@ userSchema.methods.generateToken = function (cb) {
   });
 };
 
-userSchema.methods.findByToken = function (token, cb) {
+userSchema.statics.findByToken = function (token, cb) {
   var user = this;
 
   // token을 decode한다.
@@ -83,7 +83,7 @@ userSchema.methods.findByToken = function (token, cb) {
 
     user.findOne({ _id: decoded, token: token }, function (err, user) {
       if (err) return cb(err);
-      cd(null, user);
+      cb(null, user);
     });
   });
 };

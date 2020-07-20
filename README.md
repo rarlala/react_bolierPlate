@@ -158,8 +158,12 @@ bcrypt.genSalt(saltRounds, function (err, salt) {
 ### [작업 순서]
 
 1. CRA를 활용하여 리액트 환경 구성
-2. `npm i react-router-dom --save`
-3. `npm i axios --save`
+   - src/components/views 폴더 내 Page별 폴더 생성 후 js파일 생성
+2. React-Router-Dom 설치 `npm i react-router-dom --save` 후 App.js에 Route 코드 입력
+3. AXIOS 설치 `npm i axios --save`
+4. CORS 정책 해결을 위해 proxy 설치 `npm i http-proxy-middleware --save` 및 코드 입력
+5. front와 back server를 한번에 켜기 위해 Concurrently 설치 `npm i concurrently --save` 및 코드 입력
+6. Redux 사용을 위한 설치 `npm i redux react-redux redux-promis redux-thunk --save`
 
 
 
@@ -205,89 +209,157 @@ Disk Space를 낭비하지 않고, 항상 최신 버전을 사용할 수 있다.
 
 #### React Router Dom
 
-유저가 로그인을 하고 싶어 id, pw를 입력하고 로그인 버튼 클릭
-그 요청이 서버에 가서 DB에서 정보를 찾고 일치하는지 체크
-맞으면 맞다 틀리면 틀리다 클라이언트에 전달
+페이지간 이동을 할때 사용한다.
+
+```js
+// App.js
+import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
+
+// Page import
+import LandingPage from './components/views/LandingPage/LandingPage';
+...
+
+function App() {
+  return (
+      <Router>
+      <div>
+        <Switch>
+          <Route exact path="/" component={LandingPage} />
+        </Switch>
+      </div>
+    </Router>
+  );
+}
+```
 
 
 
 #### AXIOS
 
-두개의 다른 포트를 가지고 있는 서버는 아무 설정없이 Request를 보낼 수 없다.
-Cors정책: Cross-Origin Resource Sharing (CORS)
-Proxy 설정
-npm i http-proxy-middleware --save
-보안을 위해
+```js
+// client / LandingPage.js
 
-proxy안쓰고 back에서 직접 cors 해결하기
+function LandingPage(){
+    useEffect(()=>{
+        axios.get('/api/hello')
+        .then(response => console.log(response.data))
+    }, [])
+}
+```
 
-0.  npm install cors --save로 설치하기
 
-1.  cors 불러오기
 
-let express = require("express");
+```js
+// server / index.js
+app.get('/api/hello', (req, res) => {
+    res.send('안녕하세요')
+})
+```
 
-// Express의 middleware 불러오기
 
-let bodyParser = require("body-parser"),
 
-    cors = require("cors"),
+#### CORS 정책 (Cross-Origin Resource Sharing) 정책
 
-// Express의 객체 생성
+CORS 정책에 의해 제한되기 때문에 두개의 다른 포트를 가지고 있는 서버는 아무 설정없이 Request를 보낼 수 없다. 
 
-let app = express();
 
-2.cors_origin 선언하기
 
-복수로도 추가가 가능합니다.
+##### 1) 해결방법 1: Proxy 설정
 
-// 로컬 개발용 기본 cors origin (front3000 )
+위 문제를 해결하기 위한 한가지 방법으로는 Proxy 설정이 있다.
 
-let cors_origin = [`http://localhost:3000`];
+```js
+// src/setupProxy.js
 
-3.cors 옵션 추가하기
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
-app.use(
-
-    cors({
-    
-        origin: cors_origin, // 허락하고자 하는 요청 주소
-    
-        credentials: true, // true로 하면 설정한 내용을 response 헤더에 추가 해줍니다.
-    
+module.exports = function (app) {
+  app.use(
+    '/api',
+    createProxyMiddleware({
+      target: 'http://localhost:5000',
+      changeOrigin: true,
     })
+  );
+};
+```
 
+proxy는 방화벽 기능, 웹 필터 기능, 캐쉬 데이터 및 공유 데이터 제공 기능을 한다.
+
+
+
+> **proxy 사용 이유**
+>
+> - 회사에서 직원들이나 집안에서 아이들 인터넷 사용 제어
+> - 캐쉬를 이용해 더 빠른 인터넷 이용 제공
+> - 더 나은 보안 제공
+> - 이용 제한된 사이트 접근 가능
+
+
+
+##### 2) 해결방법 2: back에서 직접 cors를 해결할 수 있다.
+
+- `npm install cors --save`로 설치하기
+
+- cors 불러오기 `let express = require("express");`
+
+- Express의 middleware 불러오기 `cors = require("cors"),`
+
+- Express의 객체 생성 `let app = express();`
+
+- cors_origin 선언하기 `let cors_origin = [http://localhost:3000];`
+
+(복수로도 추가가 가능함)
+
+- cors 옵션 추가하기
+
+```js
+app.use(
+	cors({
+        origin: cors_origin, // 허락하고자 하는 요청 주소
+        credentials: true, // true로 하면 설정한 내용을 response 헤더에 추가 해줍니다.
+	})
 );
+```
 
-4. 끝- 사용하시면 됩니다.
 
-아이피를 proxy server에서 임의로 바꿔버릴 수 있다.
-그래서 인터넷에서는 접근하는 사람의 IP를 모르게 된다.
-보내는 데이터도 임의로 바꿀 수 있다.
 
-1. 방화벽 기능 2. 웹 필터 기능 3. 캐쉬 데이터, 공유 데이터 제공 기능
+#### Concurrently를 활용해 프론트, 백 서버 한번에 켜기
 
-사용 이유
+```js
+// package.json script 내 아래와 같이 입력
+"dev": "concurrently \"npm run backend\" \"npm run start --prefix client\""
+```
 
-1. 회사에서 직원들이나 집안에서 아이들 인터넷 사용 제어
-2. 캐쉬를 이용해 더 빠른 인터넷 이용 제공
-3. 더 나은 보안 제공
-4. 이용 제한된 사이트 접근 가능
 
-Concurrently를 활용해 프론트, 백 서버 한번에 켜기
-npm i concurrently --save
 
-CSS Framework ANT Design
+> **CSS Framework ANT Design**
+>
+> - CSS Framework를 쓰는 이유는? 기능을 만드는데 더욱 집중하기 위해
+> - React JS를 위한 CSS FRAMEWORK
+>   - Material UI
+>   - React Bootstrap
+>   - Semantic UI
+>   - Ant Design
+>   - Materialize
 
-CSS Framework를 쓰는 이유는? 기능을 만드는데 더욱 집중하기 위해
 
-React JS를 위한 CSS FRAMEWORK
 
-- Material UI
-- React Bootstrap
-- Semantic UI
-- Ant Design
-- Materialize
+#### React의 props와 state
+
+##### props
+
+- properties의 줄임말
+- 컴포넌트간 주고 받을 때 사용
+- 부모->자식 컴포넌트로만 보낼 수 있다.
+- props는 변하지 않는다. 다시 부모 컴포넌트에서 값을 내려줘야 바뀜
+
+
+
+##### state 
+
+- 부모 컴포넌트에서 주는 것이 아닌 컴포넌트 내에서도 값이 변경된다.
+- state가 변하면 re-render 된다.
 
 
 
@@ -295,47 +367,65 @@ React JS를 위한 CSS FRAMEWORK
 
 - 상태 관리 라이브러리
 
-리액트 props/ state
+- redux store에 저장해놓으면 부모 컴포넌트까지 타고 올라가지 않고 직접 접근을 통해 편하게 상태 관리를 할 수 있다.
 
-props - properties의 줄임말, 컴포넌트간 주고 받을 때 사용, 부모->자식 컴포넌트로만 보낼 수 있다. props는 변하지 않는다. 다시 부모 컴포넌트에서 값을 내려줘야 바뀜
 
-state - 부모 컴포넌트에서 주는 것이 아닌 컴포넌트 내에서도 값이 변경되고, state가 변하면 re-render 된다.
 
-redux store에 저장해놓으면
-타고 올라가지 않고 직접 접근을 통해 편하게 상태 관리를 할 수 있다.
+##### Redux DATA flow
 
-redux data flow (한방향으로만 흐름
-action -> reducer -> store -> (subscribe) -> React Component -> dispatch(action) -> action
+- 한방향으로만 흐름 (strict unidirectional data flow)
+- ACTION -> REDUCER -> STORE -> (subscribe) -> React Component -> Dispatch(action)
 
-action은 무엇이 일어났는지 설명하는 객체이다.
-{type: 'LIKE_ARTICLE'. article: 42} // 42번에 좋아요 발생
-{type: 'FETCH_USER_SUCCESS', response: {id:3, name : 'Mary'}) // id가 3이고 이름이 마리인 유저의 정보를 가져오는 것을 성공함
-{type: 'ADD_TODO', text: 'Reaxt the Redux docs'} // 이 텍스트를 투두리스트에 add 했다고 알려줌
+![image-20200720234911398](C:\Users\정수지\AppData\Roaming\Typora\typora-user-images\image-20200720234911398.png)
 
-action을 함으로 인해 원래 x 였던 state가 y로 변했다.
-(previousState, action) => nextState
-이전 State와 action object를 받은 후에 next state를 return 한다.
 
-리듀서는 순수함수이기 때문에 리듀서 내부에서는
-순수 함수가 아닌 것을 호출(Date.now(), Math.random())하거나 API 호출과 라우팅 등 부가적인 걸 하면 안된다.
 
-Store는
-state를 감싸주는 역할
-내부 여러 메소드를 이용해 state를 다룰 수 있다.
+- **ACTION** : 무엇이 일어났는지 설명하는 객체이다.
 
-Redux Up!
+  ```js
+  // 42번에 좋아요 발생
+  {type: 'LIKE_ARTICLE'. article: 42}
+  // id가 3이고 이름이 마리인 유저의 정보를 가져오는 것을 성공함
+  {type: 'FETCH_USER_SUCCESS', response: {id:3, name : 'Mary'}) 
+   // 이 텍스트를 투두리스트에 add 했다고 알려줌
+  {type: 'ADD_TODO', text: 'Reaxt the Redux docs'}
+  ```
 
-1. redux
-2. react-redux
-   3,4번은 redux를 잘 사용할 수 있게 도와주는 middleware이다.
-3. redux-promise
-4. redux-thunk
+  
 
-Redux store에서 state를 변경하려면 dispatch의 action을 이용해 변경할 수 있다.
+- **Reducer** : action을 함으로 인해 원래 x 였던 state가 y로 변했다는 것을 설명해주고, 이전 State와 action object를 받은 후에 next state를 return 해주는 곳
+
+  ```js
+  (previousState, action) => nextState
+  ```
+
+Reducer는 순수함수이기 때문에 Reducer  내부에서는 순수 함수가 아닌 것을 호출(`Date.now()`, `Math.random()`)하거나 API 호출과 라우팅 등 부가적인 걸 하면 안된다.
+
+
+
+- **STORE** : state를 감싸주는 역할이며, 내부 여러 메소드를 이용해 state를 다룰 수 있다.
+
+Redux Store에서 state를 변경하려면 dispatch의 action을 이용해 변경할 수 있다.
 근데 언제나 객체형식으로 받을 수 있는게 아니라, promise 형식으로 받을 때도 있고, 함수 형태로 받을 때도 있다.
 
+
+
+위 문제를 해결하기 위해 redux-promise와 redux-thunk를 이용한다. 이들은 middleware이다.
+
 redux-thunk는 dispatch한테 function을 받는 방법을 알려주고,
+
 redux-promise는 dispatch한테 promise로 왔을 때 어떻게 대처해야하는지 알려준다.
+
+
+
+```js
+// index.js
+import { Provider } from 'react-redux'
+```
+
+
+
+
 
 combineReducers로는 Reducer는 어떻게 state가 변하는지 보여준 다음에 변한 그 값을 리턴해주는 것이 바로 리듀서이다. 여러 state가 있어 여러 reducer가 있을 수 있기 때문에 나누어져있는 combineReducer를 사용해 rootReducer를 이용해 하나로 합쳐주는 것이다.
 

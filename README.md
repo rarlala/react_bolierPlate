@@ -163,7 +163,8 @@ bcrypt.genSalt(saltRounds, function (err, salt) {
 3. AXIOS 설치 `npm i axios --save`
 4. CORS 정책 해결을 위해 proxy 설치 `npm i http-proxy-middleware --save` 및 코드 입력
 5. front와 back server를 한번에 켜기 위해 Concurrently 설치 `npm i concurrently --save` 및 코드 입력
-6. Redux 사용을 위한 설치 `npm i redux react-redux redux-promis redux-thunk --save`
+6. Redux 사용을 위한 설치 `npm i redux react-redux redux-promis redux-thunk --save` 및 코드 입력
+7. 로그인 , 회원가입 , 로그아웃, auth 기능 순차적 구현
 
 
 
@@ -408,52 +409,58 @@ Reducer는 순수함수이기 때문에 Reducer  내부에서는 순수 함수�
 Redux Store에서 state를 변경하려면 dispatch의 action을 이용해 변경할 수 있다.
 근데 언제나 객체형식으로 받을 수 있는게 아니라, promise 형식으로 받을 때도 있고, 함수 형태로 받을 때도 있다.
 
-
-
 위 문제를 해결하기 위해 redux-promise와 redux-thunk를 이용한다. 이들은 middleware이다.
 
-redux-thunk는 dispatch한테 function을 받는 방법을 알려주고,
-
-redux-promise는 dispatch한테 promise로 왔을 때 어떻게 대처해야하는지 알려준다.
+<u>redux-thunk</u>는 dispatch한테 function을 받는 방법을 알려주고, <u>redux-promise</u>는 dispatch한테 promise로 왔을 때 어떻게 대처해야하는지 알려준다.
 
 
+
+- Redux와 App을 연결시키는 작업
 
 ```js
 // index.js
-import { Provider } from 'react-redux'
+import { Provider } from 'react-redux';
+import { applyMiddleware, createStore } from 'redux';
+import promiseMiddleware from 'redux-promise';
+import ReduxThunk from 'redux-thunk';
+import Reducer from './_reducers';
+
+const createStoreWithMiddleware = applyMiddleware(promiseMiddleware, ReduxThunk)(createStore);
+
+ReactDOM.render(
+  <Provider store={createStoreWithMiddleware(Reducer, window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__())}>
+    <App />
+  </Provider>,
+  document.getElementById('root')
+);
 ```
-
-
 
 
 
 combineReducers로는 Reducer는 어떻게 state가 변하는지 보여준 다음에 변한 그 값을 리턴해주는 것이 바로 리듀서이다. 여러 state가 있어 여러 reducer가 있을 수 있기 때문에 나누어져있는 combineReducer를 사용해 rootReducer를 이용해 하나로 합쳐주는 것이다.
 
-클래스 컴포넌트는 더 많은 기능을 사용할 수 있지만, 코드가 길어지고 좀 더 복잡하고, 성능이 좀 느려짐
-함수형 컴포넌트는 제공하는 기능이 한정적이지만 코드가 짧아지고, 성능이 좋아짐
 
-근데 16.8버전에서 hook이라는게 나옴
-그래서 함수형 컴포넌트로도 쓸 수 있게됨
 
----
+#### Class Component와 Functional Component 차이
 
-유효성 체크 : Formik Yup 라이브러리를 사용
+![image-20200721001038238](C:\Users\정수지\AppData\Roaming\Typora\typora-user-images\image-20200721001038238.png)
 
-React와 React Hook
+Class Component는 더 많은 기능을 사용할 수 있지만, 코드가 길어지고 좀 더 복잡하고, 성능이 좀 느려짐
+Functional Component는 제공하는 기능이 한정적이지만 코드가 짧아지고, 성능이 좋아짐
 
----
+근데 16.8버전에서 hook이라는게 나와서, Functional Component로도 쓸 수 있게 되었다.
 
-회원가입 기능 만들기, 로그아웃 기능 만들기
 
----
 
-auth 만들기
++. 로그인 , 회원가입 , 로그아웃, auth 만들기
 
-인증이 이루어져야만 들어갈 수 있는 페이지
+- 유효성 체크를 위해 Formik Yup 라이브러리를 사용
 
-HOC라는 것을 써야함
-다른 컴포넌트를 받아 새로운 컴포넌트를 리턴하는 방식
 
-Auth(HOC)에서 해당 유저가 해당 페이지에 접근할 자격이 있는지 알아낸 후 자격이 된다면 해당 페이지로 이동하게 해주고, 아니라면 다른 페이지로 보내버린다.
+
+인증이 이루어져야만 들어갈 수 있는 페이지를 위해 **HOC**를 사용해 처리함
+
+- 다른 컴포넌트를 받아 새로운 컴포넌트를 리턴하는 방식
+- Auth(HOC)에서 해당 유저가 해당 페이지에 접근할 자격이 있는지 알아낸 후 자격이 된다면 해당 페이지로 이동하게 해주고, 아니라면 다른 페이지로 보내버린다.
 
 > https://github.com/jaewonhimnae/boiler-plate-ko/blob/master/client/src/hoc/auth.js
